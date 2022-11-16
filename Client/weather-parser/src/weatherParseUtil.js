@@ -96,7 +96,7 @@ export const selectiveDBFetch = (sDate, eDate, setViewerUpdate, setRawData, setT
         });
 
     axios
-        .get('http://localhost:5000/heading')
+        .get('http://localhost:5000/retrieveHeading')
         .then(function (response) {
             console.log('head', response.data[0]);
 

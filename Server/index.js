@@ -1,11 +1,11 @@
+//Imports
 const express = require("express")
 const mongoose = require("mongoose")
-
-
 const app = express()
-const systemSchema = require("./system");
-const headingSchema = require("./heading");
+const systemSchema = require("./schema/system");
+const headingSchema = require("./schema/heading");
 const Agenda = require("agenda");
+const saveReqParser = require("./utils/serverUtil")
 
 const PORT = 5000
 var cors = require('cors')
@@ -24,7 +24,7 @@ app.use(bodyParser.urlencoded({ limit: '100mb', parameterLimit: 50000, extended:
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb' }));
 
-mongoose.connect("mongodb://localhost:27017/testdb", {
+mongoose.connect("mongodb://localhost:27017/weather-parser", {
   useNewUrlParser: "true",
 })
 mongoose.connection.on("error", err => {
@@ -34,20 +34,20 @@ mongoose.connection.on("connected", (err, res) => {
   console.log("mongoose is connected")
 })
 
-const mongoConnectionString = "mongodb://localhost:27017/testdb";
+const mongoConnectionString = "mongodb://localhost:27017/weather-parser";
 
 const agenda = new Agenda({
-  db: { address: "localhost:27017/testdb", collection: "agendaJobs" },
+  db: { address: "localhost:27017/weather-parser", collection: "agendaJobs" },
 });
 
 console.log("exec 1")
 
-agenda.define("delete old users", async (job) => {
+agenda.define("save data from month jan to feb", async (job) => {
  const data =  await systemSchema.find({ m: { $in: [01, 02] } });
  console.log("data",JSON.stringify(data));
   const fs = require('fs');
   console.log("exec 12")
-  fs.appendFile("./test.txt", JSON.stringify(data), function (err) {
+  fs.appendFile("./weatherSavedData.txt", JSON.stringify(data), function (err) {
     if (err) {
       return console.log(err);
     }
@@ -61,36 +61,18 @@ agenda.define("delete old users", async (job) => {
   await agenda.start();
   console.log("exec 1234")
 
-  await agenda.every("3 minutes", "delete old users");
+  await agenda.every("10 minutes", "delete old users");
 
 
 })();
 
-app.post('/trac', (req, res) => {
+app.post('/saveRawData', (req, res) => {
 
 
   console.log("Req", req.body.length, req.body[0][0])
 
 
-  const heading = new headingSchema({
-    Year: req.body[0][0],
-    m: req.body[0][1],
-    d: req.body[0][2],
-    Time: req.body[0][3],
-    Timezone: req.body[0][4],
-    Cloudamount: req.body[0][5],
-    Pressure: req.body[0][6],
-    Precipitationamount: req.body[0][7],
-    Relativehumidity: req.body[0][8],
-    Precipitationintensity: req.body[0][9],
-    Snowdepth: req.body[0][10],
-    Airtemperature: req.body[0][11],
-    Dewpointtemperature: req.body[0][12],
-    Horizontalvisibility: req.body[0][13],
-    Winddirection: req.body[0][14],
-    Gustspeed: req.body[0][15],
-    Windspeed: req.body[0][16],
-  });
+  const heading = new headingSchema(saveReqParser(req,0));
 
   heading.save(function (err, msg) {
     if (err) {
@@ -107,25 +89,7 @@ app.post('/trac', (req, res) => {
 
 
 
-    const user = new systemSchema({
-      Year: req.body[i][0],
-      m: req.body[i][1],
-      d: req.body[i][2],
-      Time: req.body[i][3],
-      Timezone: req.body[i][4],
-      Cloudamount: req.body[i][5],
-      Pressure: req.body[i][6],
-      Precipitationamount: req.body[i][7],
-      Relativehumidity: req.body[i][8],
-      Precipitationintensity: req.body[i][9],
-      Snowdepth: req.body[i][10],
-      Airtemperature: req.body[i][11],
-      Dewpointtemperature: req.body[i][12],
-      Horizontalvisibility: req.body[i][13],
-      Winddirection: req.body[i][14],
-      Gustspeed: req.body[i][15],
-      Windspeed: req.body[i][16],
-    });
+    const user = new systemSchema(saveReqParser(req,i));
 
 
     user.save(function (err, msg) {
@@ -143,7 +107,7 @@ app.post('/trac', (req, res) => {
   res.send("req")
 })
 
-app.get('/checker', async (req, res) => {
+app.get('/FetchRaw', async (req, res) => {
 
 
   const systems = await systemSchema.find();
@@ -152,7 +116,7 @@ app.get('/checker', async (req, res) => {
 
 
 
-app.get('/heading', async (req, res) => {
+app.get('/retrieveHeading', async (req, res) => {
 
 
   const systems = await headingSchema.find();
@@ -161,7 +125,7 @@ app.get('/heading', async (req, res) => {
 
 
 
-app.post('/date', async (req, res) => {
+app.post('/selectedRangeFetch', async (req, res) => {
   console.log('sdd', req.body)
 
   const startDate = req.body.startDate && req.body.startDate.split("-")

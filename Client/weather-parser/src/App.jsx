@@ -52,7 +52,8 @@ function App() {
 
     const selectiveDBButtonFetch = (sDate, eDate) => {
         clearData();
-        selectiveDBFetch(sDate, eDate, setViewerUpdate, setRawData, setTemperature, setHeading);
+        setLoader(true);
+        selectiveDBFetch(sDate, eDate, setViewerUpdate, setRawData, setTemperature, setHeading,setLoader);
     };
 
     const heading = header && structuredClone(Object.values(header));

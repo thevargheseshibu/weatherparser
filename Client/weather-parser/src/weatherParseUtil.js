@@ -18,22 +18,28 @@ export const saveDataToDb = async (rawData, vUpdate, setDBSaveFlag, setLoader) =
         });
 };
 
-export const readFile = async (fileLoc, vUpdate, setSaveLoc,setLoader) => {
+export const readFile = async (fileLoc, vUpdate, setSaveLoc, setLoader) => {
     const reader = new FileReader();
-    reader.onload = async (e) => {
-        const text = e.target.result;
-        var data = Papa.parse(text);
-        setSaveLoc(structuredClone(data.data));
-       
-        console.log('data', data);
-        setLoader(false)
-       // vUpdate('Data Fetching and Parsing Completed');
-    };
+    if (fileLoc) {
+        reader.onload = async (e) => {
+            const text = e.target.result;
+            var data = Papa.parse(text);
+            setSaveLoc(structuredClone(data.data));
 
-    reader.readAsText(fileLoc);
+            console.log('data', data);
+            setLoader(false)
+            // vUpdate('Data Fetching and Parsing Completed');
+        };
+
+        reader.readAsText(fileLoc);
+    }
+    else {
+        setLoader(false);
+        vUpdate('Invalid FIle');
+    }
 };
 
-export const dbFetchRaw = (setRawData, setTemperature, setHeading, setViewerUpdate,setLoader) => {
+export const dbFetchRaw = (setRawData, setTemperature, setHeading, setViewerUpdate, setLoader) => {
     axios
         .get('http://localhost:5000/FetchRaw')
         .then(function (response) {
@@ -71,7 +77,7 @@ export const dbFetchRaw = (setRawData, setTemperature, setHeading, setViewerUpda
         });
 };
 
-export const selectiveDBFetch = (sDate, eDate, setViewerUpdate, setRawData, setTemperature, setHeading) => {
+export const selectiveDBFetch = (sDate, eDate, setViewerUpdate, setRawData, setTemperature, setHeading,setLoader) => {
     axios
         .post('http://localhost:5000/selectedRangeFetch', { startDate: sDate, endDate: eDate })
         .then(function (response) {
@@ -88,6 +94,7 @@ export const selectiveDBFetch = (sDate, eDate, setViewerUpdate, setRawData, setT
             console.log('temp', tempData, Math.min(...tempData));
             setRawData(data);
             setTemperature(tempData);
+            setLoader(false)
             setViewerUpdate('Data Fetch and Parse Completed');
         })
 
